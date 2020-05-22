@@ -1,0 +1,11 @@
+QPushButton { color: red }
+
+
+QRadioButton{
+    spacing: 2px;
+    color: white;
+}
+QRadioButton::indicator {
+    width: 45px;
+    height: 30px;
+}
