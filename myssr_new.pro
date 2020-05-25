@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui x11extras
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -8,8 +8,8 @@ CONFIG += c++11
 # any Qt feature that has been marked deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
 # deprecated API in order to know how to port your code away from it.
-DEFINES += QT_DEPRECATED_WARNINGS
-
+DEFINES +=	QT_DEPRECATED_WARNINGS \
+                SSR_USE_FFMPEG_VERSIONS
 # You can also make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
@@ -17,7 +17,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 INCLUDEPATH += AV AV/output common
 
-LIBS += -lavutil -lavformat -lavcodec -lswscale
+LIBS += -lavutil -lavformat -lavcodec -lswscale -lX11
 
 SOURCES += \
     AV/AVWrapper.cpp \
@@ -38,8 +38,10 @@ SOURCES += \
     AV/output/VideoEncoder.cpp \
     AV/output/X264Presets.cpp \
     common/CPUFeatures.cpp \
+    common/CommandLineOptions.cpp \
     common/Logger.cpp \
     common/WidgetWrapper.cpp \
+    common/utils.cpp \
     main.cpp \
     mypopup.cpp \
     ssrtools.cpp
@@ -63,11 +65,16 @@ HEADERS += \
     AV/output/X264Presets.h \
     Global.h \
     common/CPUFeatures.h \
+    common/CommandLineOptions.h \
+    common/Enum.h \
+    common/EnumStrings.h \
     common/Logger.h \
     common/MutexDataPair.h \
     common/QueueBuffer.h \
+    common/SomeData.h \
     common/TempBuffer.h \
     common/WidgetWrapper.h \
+    common/utils.h \
     mypopup.h \
     ssrtools.h
 

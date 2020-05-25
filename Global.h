@@ -6,14 +6,20 @@
 #include <mutex>
 #include <cassert>
 #include <vector>
+#include <set>
 
 #include <unistd.h>
 
 #include <QtGui>
 #include <QButtonGroup>
 #include <QLabel>
+#include <QPainter>
+#include <QComboBox>
+#include <QSpinBox>
 
+#include "Logger.h"
 
+#include "Enum.h"
 
 
 extern "C" {
@@ -27,14 +33,30 @@ extern "C" {
 #include <libavutil/samplefmt.h>
 }
 
-enum enum_video_area {
-    VIDEO_AREA_SCREEN,
-    VIDEO_AREA_FIXED,
-    VIDEO_AREA_CURSOR,
-    VIDEO_AREA_COUNT
-};
+
+#include <QX11Info>
+#include <X11/Xlib.h>
+
+//enum enum_video_area {
+//    VIDEO_AREA_SCREEN,
+//    VIDEO_AREA_FIXED,
+//    VIDEO_AREA_CURSOR,
+//    VIDEO_AREA_COUNT
+//};
 
 
+// replacement for QX11Info::isPlatformX11()
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
+inline bool IsPlatformX11() {
+    char *v = getenv("XDG_SESSION_TYPE");
+    return (v == NULL || strcasecmp(v, "x11") == 0);
+}
+#else
+inline bool IsPlatformX11() {
+    char *v = getenv("XDG_SESSION_TYPE");
+    return ((v == NULL || strcasecmp(v, "x11") == 0) && QX11Info::isPlatformX11());
+}
+#endif
 
 // simple function to do 16-byte alignment
 inline size_t grow_align16(size_t size) {
@@ -84,7 +106,8 @@ inline int64_t hrt_time_micro() {
     return (uint64_t) ts.tv_sec * (uint64_t) 1000000 + (uint64_t) (ts.tv_nsec / 1000);
 }
 
-
+// av_muxer_iterate: lavf 58.9.100 / ???
+#define SSR_USE_AV_MUXER_ITERATE                   TEST_AV_VERSION(LIBAVFORMAT, 58, 9, 999, 999)
 
 //#define SSR_USE_X86_ASM 1
 

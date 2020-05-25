@@ -152,6 +152,9 @@
      <height>27</height>
     </rect>
    </property>
+   <property name="maximum">
+    <number>2000</number>
+   </property>
   </widget>
   <widget class="QSpinBox" name="m_spinbox_video_y">
    <property name="geometry">
@@ -181,6 +184,32 @@
      <width>42</width>
      <height>27</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="m_pushbutton_video_select_rectangle">
+   <property name="geometry">
+    <rect>
+     <x>129</x>
+     <y>210</y>
+     <width>91</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>select rectangle</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="m_pushbutton_video_select_window">
+   <property name="geometry">
+    <rect>
+     <x>230</x>
+     <y>210</y>
+     <width>91</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>select window</string>
    </property>
   </widget>
  </widget>
