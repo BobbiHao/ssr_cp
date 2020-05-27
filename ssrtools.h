@@ -14,6 +14,7 @@ class ssrtools;
 }
 
 class mypopup;
+class X11Input;
 
 class ssrtools : public QWidget
 {
@@ -66,6 +67,7 @@ protected:
 private:
     Ui::ssrtools *ui;
     mypopup *mp;
+    QSettings settings;
 
     bool options_show;
 
@@ -89,6 +91,9 @@ private:
     bool m_grabbing, m_selecting_window;
     std::unique_ptr<RecordingFrameWindow>  m_rubber_band, m_recording_frame;
     QRect m_rubber_band_rect, m_select_window_outer_rect, m_select_window_inner_rect;
+
+
+    std::unique_ptr<X11Input> m_x11_input;
 
 private:
     //output
@@ -139,6 +144,9 @@ public:
 
     inline std::vector<ContainerData> GetContainers() { return m_containers; }
     inline std::vector<ContainerData> GetContainersAV() { return m_containers_av; }
+    inline std::vector<VideoCodecData> GetVideoCodecs() { return m_video_codecs; }
+    inline std::vector<AudioCodecData> GetAudioCodecs() { return m_audio_codecs; }
+
 };
 
 #endif // SSRTOOLS_H

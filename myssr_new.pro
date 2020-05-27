@@ -15,7 +15,7 @@ DEFINES +=	QT_DEPRECATED_WARNINGS \
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += AV AV/output common
+INCLUDEPATH += AV AV/output AV/input common
 
 LIBS += -lavutil -lavformat -lavcodec -lswscale -lX11
 
@@ -30,6 +30,7 @@ SOURCES += \
     AV/FastScaler_Scale_Generic.cpp \
     AV/FastScaler_Scale_SSSE3.cpp \
     AV/SourceSink.cpp \
+    AV/input/X11Input.cpp \
     AV/output/AudioEncoder.cpp \
     AV/output/BaseEncoder.cpp \
     AV/output/Muxer.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     AV/FastScaler_Scale_Generic.h \
     AV/SampleCast.h \
     AV/SourceSink.h \
+    AV/input/X11Input.h \
     AV/output/AudioEncoder.h \
     AV/output/BaseEncoder.h \
     AV/output/Muxer.h \

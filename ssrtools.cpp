@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "CommandLineOptions.h"
 #include "EnumStrings.h"
+#include "X11Input.h"
+
 
 ENUMSTRINGS(ssr::enum_video_area) = {
     {ssr::enum_video_area::VIDEO_AREA_SCREEN, "screen"},
@@ -17,6 +19,39 @@ ENUMSTRINGS(ssr::enum_video_area) = {
     {PageInput::VIDEO_AREA_GLINJECT, "glinject"},
 #endif
 };
+ENUMSTRINGS(ssr::enum_container) = {
+    {ssr::enum_container::CONTAINER_MKV, "mkv"},
+    {ssr::enum_container::CONTAINER_MP4, "mp4"},
+    {ssr::enum_container::CONTAINER_WEBM, "webm"},
+    {ssr::enum_container::CONTAINER_OGG, "ogg"},
+    {ssr::enum_container::CONTAINER_OTHER, "other"},
+};
+ENUMSTRINGS(ssr::enum_video_codec) = {
+    {ssr::enum_video_codec::VIDEO_CODEC_H264, "h264"},
+    {ssr::enum_video_codec::VIDEO_CODEC_VP8, "vp8"},
+    {ssr::enum_video_codec::VIDEO_CODEC_THEORA, "theora"},
+    {ssr::enum_video_codec::VIDEO_CODEC_OTHER, "other"},
+};
+ENUMSTRINGS(ssr::enum_audio_codec) = {
+    {ssr::enum_audio_codec::AUDIO_CODEC_VORBIS, "vorbis"},
+    {ssr::enum_audio_codec::AUDIO_CODEC_MP3, "mp3"},
+    {ssr::enum_audio_codec::AUDIO_CODEC_AAC, "aac"},
+    {ssr::enum_audio_codec::AUDIO_CODEC_UNCOMPRESSED, "uncompressed"},
+    {ssr::enum_audio_codec::AUDIO_CODEC_OTHER, "other"},
+};
+//ENUMSTRINGS(ssr::enum_h264_preset) = {
+//    {PageOutput::H264_PRESET_ULTRAFAST, "ultrafast"},
+//    {PageOutput::H264_PRESET_SUPERFAST, "superfast"},
+//    {PageOutput::H264_PRESET_VERYFAST, "veryfast"},
+//    {PageOutput::H264_PRESET_FASTER, "faster"},
+//    {PageOutput::H264_PRESET_FAST, "fast"},
+//    {PageOutput::H264_PRESET_MEDIUM, "medium"},
+//    {PageOutput::H264_PRESET_SLOW, "slow"},
+//    {PageOutput::H264_PRESET_SLOWER, "slower"},
+//    {PageOutput::H264_PRESET_VERYSLOW, "veryslow"},
+//    {PageOutput::H264_PRESET_PLACEBO, "placebo"},
+//};
+
 
 ssrtools::ssrtools(QWidget *parent) :
     QWidget(parent),
@@ -26,9 +61,9 @@ ssrtools::ssrtools(QWidget *parent) :
     setStyle();
 
 
-    mp = new mypopup(this, parent);
 //    mp->hide();
     Init();
+    mp = new mypopup(this, parent);
 
 }
 
@@ -95,11 +130,11 @@ void ssrtools::Init()
 
     //mp input
 //    connect(mp->getUI()->m_comboBox_videores,
-    mp->InputInit(this);
+//    mp->InputInit(this);
 
-
-    //mp output
     Output_init();
+    //mp output
+//    mp->OutputInit();
 
 
     LoadSettings();
@@ -123,6 +158,20 @@ void ssrtools::Output_init()
             {ssr::enum_video_codec::VIDEO_CODEC_THEORA},
             {ssr::enum_audio_codec::AUDIO_CODEC_VORBIS}}),
         ContainerData({tr("Other..."), "other", QStringList(), "", std::set<ssr::enum_video_codec>({}), std::set<ssr::enum_audio_codec>({})}),
+    };
+
+    m_video_codecs = {
+        {"H.264"       , "libx264"  },
+        {"VP8"         , "libvpx"   },
+        {"Theora"      , "libtheora"},
+        {tr("Other..."), "other"    },
+    };
+    m_audio_codecs = {
+        {"Vorbis"          , "libvorbis"   },
+        {"MP3"             , "libmp3lame"  },
+        {"AAC"             , "libvo_aacenc"},
+        {tr("Uncompressed"), "pcm_s16le"   },
+        {tr("Other...")    , "other"       },
     };
 
     m_containers_av.clear();
@@ -232,7 +281,7 @@ void ssrtools::on_m_toolButton_options_clicked()
 
 void ssrtools::on_m_pushButton_start_clicked()
 {
-//    m_file_base =
+    m_file_base = mp->GetFile();
 
 
     if (m_output_started) return;
@@ -242,9 +291,46 @@ void ssrtools::on_m_pushButton_start_clicked()
         if (m_output_manager == NULL) {
             //set the file name
             m_output_settings.file = GetNewSegmentFile(m_file_base, m_add_timestamp);
-        }
-    } catch(...) {
+            qDebug() << "[record debug] m_output_settings.file: "  << m_output_settings.file;
 
+            //for X11 recording, update the video size (if possible)
+            if (m_x11_input != NULL) {
+                m_x11_input->GetCurrentSize(&m_video_in_width, &m_video_in_height);
+            }
+
+            // calculate the output width and height
+//            if(m_video_scaling) {
+                // Only even width and height is allowed because some pixel formats (e.g. YUV420) require this.
+//                m_output_settings.video_width = m_video_scaled_width / 2 * 2;
+//                m_output_settings.video_height = m_video_scaled_height / 2 * 2;
+//            } else {
+                // If the user did not explicitly select scaling, then don't force scaling just because the recording area is one pixel too large.
+                // One missing row/column of pixels is probably better than a blurry video (and scaling is SLOW).
+            m_video_in_width = m_video_in_width / 2 * 2;
+            m_video_in_height = m_video_in_height / 2 * 2;
+            m_output_settings.video_width = m_video_in_width;
+            m_output_settings.video_height = m_video_in_height;
+//            }
+
+        //start the output
+            m_output_manager.reset(new OutputManager(m_output_settings));
+
+        } else {
+
+            // start a new segment
+            m_output_manager->GetSynchronizer()->NewSegment();
+        }
+
+        Logger::LogInfo("[PageRecord::StartOutput] " + tr("Started output."));
+
+        m_output_started = true;
+        m_recorded_something = true;
+        UpdateSysTray();
+        UpdateRecordButton();
+        UpdateInput();
+
+    } catch(...) {
+        Logger::LogError("[PageRecord::StartOutput] " + tr("Error: Something went wrong during initialization."));
     }
 }
 
@@ -473,6 +559,9 @@ void ssrtools::LoadInputProfileSettings(QSettings *settings)
     OnUpdateVideoAreaFields();
 
 }
+
+
+
 
 void ssrtools::StartGrabbing()
 {

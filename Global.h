@@ -7,8 +7,16 @@
 #include <cassert>
 #include <vector>
 #include <set>
+#include <thread>
+#include <atomic>
+
 
 #include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+
+#include <QDebug>
 
 #include <QtGui>
 #include <QButtonGroup>
@@ -16,6 +24,7 @@
 #include <QPainter>
 #include <QComboBox>
 #include <QSpinBox>
+#include <QLineEdit>
 
 #include "Logger.h"
 
@@ -36,6 +45,10 @@ extern "C" {
 
 #include <QX11Info>
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/extensions/XShm.h>
+#include <X11/extensions/Xfixes.h>
+#include <X11/extensions/Xinerama.h>
 
 //enum enum_video_area {
 //    VIDEO_AREA_SCREEN,
@@ -78,6 +91,12 @@ class ResamplerException : public std::exception {
 public:
     inline virtual const char* what() const throw() override {
         return "ResamplerException";
+    }
+};
+class X11Exception : public std::exception {
+public:
+    inline virtual const char* what() const throw() override {
+        return "X11Exception";
     }
 };
 
@@ -143,6 +162,12 @@ inline int64_t hrt_time_micro() {
 
 // Maximum allowed image size (to avoid 32-bit integer overflow)
 #define SSR_MAX_IMAGE_SIZE 20000
+
+inline void GroupVisible(std::initializer_list<QWidget*> widgets, bool visible) {
+    for(QWidget *w : widgets) {
+        w->setVisible(visible);
+    }
+}
 
 
 #endif // GLOBAL_H
