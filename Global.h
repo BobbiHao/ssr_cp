@@ -36,7 +36,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavutil/frame.h>
 #include <libavutil/mem.h>
-#include <libavcodec/avcodec.h>
+//#include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libavutil/pixfmt.h>
 #include <libavutil/samplefmt.h>
@@ -99,6 +99,15 @@ public:
         return "X11Exception";
     }
 };
+#if SSR_USE_PULSEAUDIO
+class PulseAudioException : public std::exception {
+public:
+    inline virtual const char* what() const throw() override {
+        return "PulseAudioException";
+    }
+};
+#endif
+
 
 template<typename T>
 inline T clamp(T v, T lo, T hi) {
@@ -114,6 +123,10 @@ template<> inline float clamp<float>(float v, float lo, float hi) {
     return fmin(fmax(v, lo), hi);
 }
 template<> inline double clamp<double>(double v, double lo, double hi) {
+    assert(lo <= hi);
+    return fmin(fmax(v, lo), hi);
+}
+template<> inline long clamp<long>(long v, long lo, long hi) {
     assert(lo <= hi);
     return fmin(fmax(v, lo), hi);
 }
@@ -159,6 +172,18 @@ inline int64_t hrt_time_micro() {
 
 // AVStream::codecpar: lavf 57.33.100 / 57.5.0
 #define SSR_USE_AVSTREAM_CODECPAR                  TEST_AV_VERSION(LIBAVFORMAT, 57, 33, 57, 5)
+
+// planar sample formats: lavu 51.27.0 / 51.17.0
+#define SSR_USE_AVUTIL_PLANAR_SAMPLE_FMT           TEST_AV_VERSION(LIBAVUTIL, 51, 27, 51, 17)
+
+// AVFrame::nb_samples, AVFrame::extended_data and avcodec_decode_audio4: lavc 53.40.0 / 53.25.0
+#define SSR_USE_AVFRAME_NB_SAMPLES                 TEST_AV_VERSION(LIBAVCODEC, 53, 40, 53, 25)
+#define SSR_USE_AVFRAME_EXTENDED_DATA              SSR_USE_AVFRAME_NB_SAMPLES
+
+// AVFrame::width, AVFrame::height: lavc 53.4.0 / 53.31.0
+#define SSR_USE_AVFRAME_WIDTH_HEIGHT               TEST_AV_VERSION(LIBAVCODEC, 53, 4, 53, 31)
+// AVFrame::format: lavc 53.5.0 / 53.31.0
+#define SSR_USE_AVFRAME_FORMAT                     TEST_AV_VERSION(LIBAVCODEC, 53, 5, 53, 31)
 
 // Maximum allowed image size (to avoid 32-bit integer overflow)
 #define SSR_MAX_IMAGE_SIZE 20000

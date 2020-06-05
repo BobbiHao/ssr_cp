@@ -76,7 +76,7 @@ void VideoSource::PushVideoPing(int64_t timestamp)
     }
 }
 
-void AudioSource::PushAudioSample(unsigned int channels, unsigned int sample_rate, AVSampleFormat format, unsigned int sample_count, const uint8_t *data, int64_t timestamp)
+void AudioSource::PushAudioSamples(unsigned int channels, unsigned int sample_rate, AVSampleFormat format, unsigned int sample_count, const uint8_t *data, int64_t timestamp)
 {
     SharedLock lock(&m_shared_data);
     for (SinkData &s: lock->m_sinks) {

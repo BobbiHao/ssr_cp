@@ -1,5 +1,6 @@
 #include "mypopup.h"
 #include "ui_mypopup.h"
+//#include "Options_Widgets.h"
 
 //#include "WidgetWrapper.h"
 
@@ -80,6 +81,12 @@ void mypopup::OutputInit()
     for (int i = 0; i < int(ssr::enum_audio_codec::AUDIO_CODEC_COUNT); ++i) {
         ui->m_comboBox_audio_codec->addItem(ssr_audio_codecs[i].name);
     }
+    //audio kb rate
+    auto ssr_kbit_rates = ssr->GetAudioKBitRates();
+    for (unsigned int i = 0; i < sizeof(ssr_kbit_rates)/sizeof(ssr_kbit_rates[0]); ++i) {
+        ui->m_comboBox_audiorate->addItem(ssr_kbit_rates[i].rate);
+    }
+
 
     QSettings settings(CommandLineOptions::GetSettingsFile(), QSettings::IniFormat);
     LoadAVProfileSettings(&settings);
@@ -159,8 +166,8 @@ void mypopup::LoadAVProfileSettings(QSettings *settings)
 
     SetAudioCodec(StringToEnum(settings->value("output/audio_codec", QString()).toString(), default_audio_codec));
 //    SetAudioCodecAV(FindAudioCodecAV(settings->value("output/audio_codec_av", QString()).toString()));
-//    SetAudioKBitRate(settings->value("output/audio_kbit_rate", 128).toUInt());
-//    SetAudioOptions(settings->value("output/audio_options", "").toString());
+//    ssr->SetAudioKBitRate(settings->value("output/audio_kbit_rate", 128).toUInt());
+    ssr->SetAudioOptions(settings->value("output/audio_options", "").toString());
 
     // update things
     OnUpdateContainerFields();
@@ -177,6 +184,45 @@ QString mypopup::GetFileProtocol()
     }
     return protocol_regex.cap(1);
 }
+
+QString mypopup::GetContainerAVName() {
+    ssr::enum_container container = GetContainer();
+    auto ssr_containers = ssr->GetContainers();
+    auto ssr_containers_av = ssr->GetContainersAV();
+    if(container != ssr::enum_container::CONTAINER_OTHER)
+        return ssr_containers[int(container)].avname;
+    else
+        return ssr_containers_av[GetContainerAV()].avname;
+}
+
+QString mypopup::GetVideoCodecAVName() {
+    ssr::enum_video_codec video_codec = GetVideoCodec();
+    auto ssr_video_codecs = ssr->GetVideoCodecs();
+    auto ssr_video_codecs_av = ssr->GetVideoCodecsAV();
+    if(video_codec != ssr::enum_video_codec::VIDEO_CODEC_OTHER)
+        return ssr_video_codecs[int(video_codec)].avname;
+//    else
+//        return ssr_video_codecs_av[GetVideoCodecAV()].avname;
+    return NULL;
+}
+
+QString mypopup::GetAudioCodecAVName() {
+    ssr::enum_audio_codec audio_codec = GetAudioCodec();
+    auto ssr_audio_codecs = ssr->GetAudioCodecs();
+    if(audio_codec != ssr::enum_audio_codec::AUDIO_CODEC_OTHER)
+        return ssr_audio_codecs[int(audio_codec)].avname;
+//    else
+//        return m_audio_codecs_av[GetAudioCodecAV()].avname;
+    return NULL;
+}
+
+QString mypopup::GetAudioKBitRateName()
+{
+    int audio_kbirt_rate = GetAudioKBitRate();
+    auto audio_kbit_rates = ssr->GetAudioKBitRates();
+    return audio_kbit_rates[audio_kbirt_rate].rate;
+}
+
 
 void mypopup::OnUpdateVideoAreaFields()
 {
@@ -374,15 +420,37 @@ void mypopup::SetContainerAV(unsigned int container)
     m_combobox_container_av_not_shown->setCurrentIndex(clamp(container, 0u, (unsigned int) ssr->GetContainersAV().size() - 1));
 }
 
+ssr::enum_video_codec mypopup::GetVideoCodec()
+{
+     return (ssr::enum_video_codec) clamp(ui->m_comboBox_video_codec->currentIndex(), 0, int(ssr::enum_video_codec::VIDEO_CODEC_COUNT) - 1);
+}
+
 void mypopup::SetVideoCodec(ssr::enum_video_codec video_codec)
 {
     ui->m_comboBox_video_codec->setCurrentIndex(clamp((unsigned int) video_codec,
                                                       0u, (unsigned int) ssr::enum_video_codec::VIDEO_CODEC_COUNT - 1));
 }
 
+ssr::enum_audio_codec mypopup::GetAudioCodec()
+{
+     return (ssr::enum_audio_codec) clamp(ui->m_comboBox_audio_codec->currentIndex(), 0, int(ssr::enum_audio_codec::AUDIO_CODEC_COUNT) - 1);
+}
+
+//ssr::enum_video_codec mypopup::GetVideoCodecAV()
+//{
+//    return clamp(ui->m_comboBox_video_codec_av->currentIndex(), 0, (int) m_video_codecs_av.size() - 1);
+//}
+
 void mypopup::SetAudioCodec(ssr::enum_audio_codec audio_codec)
 {
     ui->m_comboBox_audio_codec->setCurrentIndex(clamp((unsigned int) audio_codec, 0u, (unsigned int) ssr::enum_audio_codec::AUDIO_CODEC_COUNT - 1));
+}
+
+int mypopup::GetAudioKBitRate()
+{
+    auto ssr_audio_kbit_rates = ssr->GetAudioKBitRates();
+    int len = sizeof(ssr_audio_kbit_rates)/sizeof(ssr_audio_kbit_rates[0]) - 1;
+    return clamp(ui->m_comboBox_audiorate->currentIndex(), 0,  len);
 }
 #endif
 

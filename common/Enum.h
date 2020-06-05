@@ -35,5 +35,18 @@ enum class enum_audio_codec {
     AUDIO_CODEC_COUNT // must be last
 };
 
+enum enum_audio_backend {
+#if SSR_USE_ALSA
+    AUDIO_BACKEND_ALSA,
+#endif
+#if SSR_USE_PULSEAUDIO
+    AUDIO_BACKEND_PULSEAUDIO,
+#endif
+#if SSR_USE_JACK
+    AUDIO_BACKEND_JACK,
+#endif
+    AUDIO_BACKEND_COUNT // must be last
+};
+
 }
 #endif // ENUM_H

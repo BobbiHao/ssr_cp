@@ -1,5 +1,132 @@
 #include "X11Input.h"
 
+/*
+The code in this file is based on the MIT-SHM example code and the x11grab device in libav/ffmpeg (which is GPL):
+http://www.xfree86.org/current/mit-shm.html
+https://git.libav.org/?p=libav.git;a=blob;f=libavdevice/x11grab.c
+I am doing the recording myself instead of just using x11grab (as I originally planned) because this is more flexible.
+*/
+
+// Converts a X11 image format to a format that libav/ffmpeg understands.
+static AVPixelFormat X11ImageGetPixelFormat(XImage* image) {
+    switch(image->bits_per_pixel) {
+        case 8: return AV_PIX_FMT_PAL8;
+        case 16: {
+            if(image->red_mask == 0xf800 && image->green_mask == 0x07e0 && image->blue_mask == 0x001f) return AV_PIX_FMT_RGB565;
+            if(image->red_mask == 0x7c00 && image->green_mask == 0x03e0 && image->blue_mask == 0x001f) return AV_PIX_FMT_RGB555;
+            break;
+        }
+        case 24: {
+            if(image->red_mask == 0xff0000 && image->green_mask == 0x00ff00 && image->blue_mask == 0x0000ff) return AV_PIX_FMT_BGR24;
+            if(image->red_mask == 0x0000ff && image->green_mask == 0x00ff00 && image->blue_mask == 0xff0000) return AV_PIX_FMT_RGB24;
+            break;
+        }
+        case 32: {
+            if(image->red_mask == 0xff0000 && image->green_mask == 0x00ff00 && image->blue_mask == 0x0000ff) return AV_PIX_FMT_BGRA;
+            if(image->red_mask == 0x0000ff && image->green_mask == 0x00ff00 && image->blue_mask == 0xff0000) return AV_PIX_FMT_RGBA;
+            if(image->red_mask == 0xff000000 && image->green_mask == 0x00ff0000 && image->blue_mask == 0x0000ff00) return AV_PIX_FMT_ABGR;
+            if(image->red_mask == 0x0000ff00 && image->green_mask == 0x00ff0000 && image->blue_mask == 0xff000000) return AV_PIX_FMT_ARGB;
+            break;
+        }
+    }
+    Logger::LogError("[X11ImageGetPixelFormat] " + Logger::tr("Error: Unsupported X11 image pixel format!") + "\n"
+                     "    bits_per_pixel = " + QString::number(image->bits_per_pixel) + ", red_mask = 0x" + QString::number(image->red_mask, 16)
+                     + ", green_mask = 0x" + QString::number(image->green_mask, 16) + ", blue_mask = 0x" + QString::number(image->blue_mask, 16));
+    throw X11Exception();
+}
+
+
+// clears a rectangular area of an image (i.e. sets the memory to zero, which will most likely make the image black)
+static void X11ImageClearRectangle(XImage* image, unsigned int x, unsigned int y, unsigned int w, unsigned int h) {
+
+    // check the image format
+    if(image->bits_per_pixel % 8 != 0)
+        return;
+    unsigned int pixel_bytes = image->bits_per_pixel / 8;
+
+    // fill the rectangle with zeros
+    for(unsigned int j = 0; j < h; ++j) {
+        uint8_t *image_row = (uint8_t*) image->data + image->bytes_per_line * (y + j);
+        memset(image_row + pixel_bytes * x, 0, pixel_bytes * w);
+    }
+
+}
+
+// Draws the current cursor at the current position on the image. Requires XFixes.
+// Note: In the original code from x11grab, the variables for red and blue are swapped
+// (which doesn't change the result, but it's confusing).
+// Note 2: This function assumes little-endianness.
+// Note 3: This function only supports 24-bit and 32-bit images (it does nothing for other bit depths).
+static void X11ImageDrawCursor(Display* dpy, XImage* image, int recording_area_x, int recording_area_y) {
+
+    // check the image format
+    unsigned int pixel_bytes, r_offset, g_offset, b_offset;
+    if(image->bits_per_pixel == 24 && image->red_mask == 0xff0000 && image->green_mask == 0x00ff00 && image->blue_mask == 0x0000ff) {
+        pixel_bytes = 3;
+        r_offset = 2; g_offset = 1; b_offset = 0;
+    } else if(image->bits_per_pixel == 24 && image->red_mask == 0x0000ff && image->green_mask == 0x00ff00 && image->blue_mask == 0xff0000) {
+        pixel_bytes = 3;
+        r_offset = 0; g_offset = 1; b_offset = 2;
+    } else if(image->bits_per_pixel == 32 && image->red_mask == 0xff0000 && image->green_mask == 0x00ff00 && image->blue_mask == 0x0000ff) {
+        pixel_bytes = 4;
+        r_offset = 2; g_offset = 1; b_offset = 0;
+    } else if(image->bits_per_pixel == 32 && image->red_mask == 0x0000ff && image->green_mask == 0x00ff00 && image->blue_mask == 0xff0000) {
+        pixel_bytes = 4;
+        r_offset = 0; g_offset = 1; b_offset = 2;
+    } else if(image->bits_per_pixel == 32 && image->red_mask == 0xff000000 && image->green_mask == 0x00ff0000 && image->blue_mask == 0x0000ff00) {
+        pixel_bytes = 4;
+        r_offset = 3; g_offset = 2; b_offset = 1;
+    } else if(image->bits_per_pixel == 32 && image->red_mask == 0x0000ff00 && image->green_mask == 0x00ff0000 && image->blue_mask == 0xff000000) {
+        pixel_bytes = 4;
+        r_offset = 1; g_offset = 2; b_offset = 3;
+    } else {
+        return;
+    }
+
+    // get the cursor
+    XFixesCursorImage *xcim = XFixesGetCursorImage(dpy);
+    if(xcim == NULL)
+        return;
+
+    // calculate the position of the cursor
+    int x = xcim->x - xcim->xhot - recording_area_x;
+    int y = xcim->y - xcim->yhot - recording_area_y;
+
+    // calculate the part of the cursor that's visible
+    int cursor_left = std::max(0, -x), cursor_right = std::min((int) xcim->width, image->width - x);
+    int cursor_top = std::max(0, -y), cursor_bottom = std::min((int) xcim->height, image->height - y);
+
+    // draw the cursor
+    // XFixesCursorImage uses 'long' instead of 'int' to store the cursor images, which is a bit weird since
+    // 'long' is 64-bit on 64-bit systems and only 32 bits are actually used. The image uses premultiplied alpha.
+    for(int j = cursor_top; j < cursor_bottom; ++j) {
+        unsigned long *cursor_row = xcim->pixels + xcim->width * j;
+        uint8_t *image_row = (uint8_t*) image->data + image->bytes_per_line * (y + j);
+        for(int i = cursor_left; i < cursor_right; ++i) {
+            unsigned long cursor_pixel = cursor_row[i];
+            uint8_t *image_pixel = image_row + pixel_bytes * (x + i);
+            int cursor_a = (uint8_t) (cursor_pixel >> 24);
+            int cursor_r = (uint8_t) (cursor_pixel >> 16);
+            int cursor_g = (uint8_t) (cursor_pixel >> 8);
+            int cursor_b = (uint8_t) (cursor_pixel >> 0);
+            if(cursor_a == 255) {
+                image_pixel[r_offset] = cursor_r;
+                image_pixel[g_offset] = cursor_g;
+                image_pixel[b_offset] = cursor_b;
+            } else {
+                image_pixel[r_offset] = (image_pixel[r_offset] * (255 - cursor_a) + 127) / 255 + cursor_r;
+                image_pixel[g_offset] = (image_pixel[g_offset] * (255 - cursor_a) + 127) / 255 + cursor_g;
+                image_pixel[b_offset] = (image_pixel[b_offset] * (255 - cursor_a) + 127) / 255 + cursor_b;
+            }
+        }
+    }
+
+    // free the cursor
+    XFree(xcim);
+
+}
+
+
 X11Input::X11Input(unsigned int x, unsigned int y, unsigned int width, unsigned int height, bool record_cursor, bool follow_cursor, bool follow_fullscreen)
 {
    m_x = x;
@@ -43,6 +170,19 @@ X11Input::X11Input(unsigned int x, unsigned int y, unsigned int width, unsigned 
 
 }
 
+X11Input::~X11Input()
+{
+    // tell the thread to stop
+    if(m_thread.joinable()) {
+        Logger::LogInfo("[X11Input::~X11Input] " + Logger::tr("Stopping input thread ..."));
+        m_should_stop = true;
+        m_thread.join();
+    }
+
+    // free everything
+    Free();
+}
+
 void X11Input::GetCurrentSize(unsigned int *width, unsigned int *height)
 {
     SharedLock lock(&m_shared_data);
@@ -61,7 +201,7 @@ void X11Input::Init()
     }
     m_x11_screen = DefaultScreen(m_x11_display); //QX11Info::appScreen();
     m_x11_root = RootWindow(m_x11_display, m_x11_screen); //QX11Info::appRootWindow(m_x11_screen);
-    m_x11_visual = DefaultVisual(m_x11_visual, m_x11_screen);
+    m_x11_visual = DefaultVisual(m_x11_display, m_x11_screen);
     m_x11_depth = DefaultDepth(m_x11_display, m_x11_screen);
     m_x11_use_shm = XShmQueryExtension(m_x11_display);
     if(m_x11_use_shm) {
@@ -331,8 +471,38 @@ void X11Input::InputThread()
                     throw X11Exception();
                 }
             }
+            // clear the dead space
+            for(size_t i = 0; i < m_screen_dead_space.size(); ++i) {
+                Rect rect = m_screen_dead_space[i];
+                if(rect.m_x1 < grab_x)
+                    rect.m_x1 = grab_x;
+                if(rect.m_y1 < grab_y)
+                    rect.m_y1 = grab_y;
+                if(rect.m_x2 > grab_x + grab_width)
+                    rect.m_x2 = grab_x + grab_width;
+                if(rect.m_y2 > grab_y + grab_height)
+                    rect.m_y2 = grab_y + grab_height;
+                if(rect.m_x2 > rect.m_x1 && rect.m_y2 > rect.m_y1)
+                    X11ImageClearRectangle(m_x11_image, rect.m_x1 - grab_x, rect.m_y1 - grab_y, rect.m_x2 - rect.m_x1, rect.m_y2 - rect.m_y1);
+            }
+
+            // draw the cursor
+            if(m_record_cursor) {
+                X11ImageDrawCursor(m_x11_display, m_x11_image, grab_x, grab_y);
+            }
+
+            // increase the frame counter
+            ++m_frame_counter;
+
+            // push the frame
+            uint8_t *image_data = (uint8_t*) m_x11_image->data;
+            int image_stride = m_x11_image->bytes_per_line;
+            AVPixelFormat x11_image_format = X11ImageGetPixelFormat(m_x11_image);
+            PushVideoFrame(grab_width, grab_height, image_data, image_stride, x11_image_format, timestamp);
+            last_timestamp = timestamp;
 
         }
+        Logger::LogInfo("[X11Input::InputThread] " + Logger::tr("Input thread stopped."));
 
     } catch(const std::exception& e) {
         m_error_occurred = true;

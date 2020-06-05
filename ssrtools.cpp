@@ -1,5 +1,6 @@
 #include "ssrtools.h"
 #include "ui_ssrtools.h"
+//#include "Input_Widgets.h"
 #include <QDebug>
 
 #include <QFile>
@@ -65,6 +66,7 @@ ssrtools::ssrtools(QWidget *parent) :
     Init();
     mp = new mypopup(this, parent);
 
+    Record_init();
 }
 
 ssrtools::~ssrtools()
@@ -87,22 +89,36 @@ void ssrtools::setStyle()
 void ssrtools::Init()
 {
 
-
     options_show = false;
-
     m_grabbing = false;
     m_selecting_window = false;
-
 
     //record init
     m_output_started =false;
 
+    Input_init();
+
+    //mp input
+//    connect(mp->getUI()->m_comboBox_videores,
+//    mp->InputInit(this);
+
+    Output_init();
+    //mp output
+//    mp->OutputInit();
+
+    LoadSettings();
+
+
+
+}
+
+void ssrtools::Input_init()
+{
     //input
     m_buttongroup_video_area = new QButtonGroup;
     m_buttongroup_video_area->addButton(ui->m_radioButton_fullscreen, int(ssr::enum_video_area::VIDEO_AREA_SCREEN));
     m_buttongroup_video_area->addButton(ui->m_radioButton_fixed, int(ssr::enum_video_area::VIDEO_AREA_FIXED));
     m_buttongroup_video_area->addButton(ui->m_radioButton_cursor, int(ssr::enum_video_area::VIDEO_AREA_CURSOR));
-
 
     ui->m_spinbox_video_x->setRange(0, SSR_MAX_IMAGE_SIZE);
     ui->m_spinbox_video_x->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -127,19 +143,16 @@ void ssrtools::Init()
     connect(ui->m_spinbox_video_h, SIGNAL(focusOut()), this, SLOT(OnUpdateRecordingFrame()));
     connect(ui->m_spinbox_video_h, SIGNAL(valueChanged(int)), this, SLOT(OnUpdateRecordingFrame()));
 
-
-    //mp input
-//    connect(mp->getUI()->m_comboBox_videores,
-//    mp->InputInit(this);
-
-    Output_init();
-    //mp output
-//    mp->OutputInit();
-
-
-    LoadSettings();
-
-
+#if SSR_USE_PULSEAUDIO
+//            m_label_pulseaudio_source = new QLabel(tr("Source:"), groupbox_audio);
+    m_combobox_pulseaudio_source = new QComboBox;
+//            m_combobox_pulseaudio_source->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+//            m_combobox_pulseaudio_source->setToolTip(tr("The PulseAudio source that will be used for recording.\n"
+//                                                        "A 'monitor' is a source that records the audio played by other applications.", "Don't translate 'monitor' unless PulseAudio does this as well"));
+//            m_pushbutton_pulseaudio_refresh = new QPushButton(tr("Refresh"), groupbox_audio);
+//            m_pushbutton_pulseaudio_refresh->setToolTip(tr("Refreshes the list of PulseAudio sources."));
+    LoadPulseAudioSources();
+#endif
 }
 
 void ssrtools::Output_init()
@@ -172,6 +185,13 @@ void ssrtools::Output_init()
         {"AAC"             , "libvo_aacenc"},
         {tr("Uncompressed"), "pcm_s16le"   },
         {tr("Other...")    , "other"       },
+    };
+    m_audio_kbit_rates = {
+        {"32"},
+        {"96"},
+        {"128"},
+        {"160"},
+        {"192"}
     };
 
     m_containers_av.clear();
@@ -243,6 +263,80 @@ void ssrtools::Output_init()
         throw LibavException();
     }
 
+    m_lineedit_audio_options_not_shown = new QLineEdit;
+
+}
+
+void ssrtools::Record_init()
+{
+    m_input_started = false;
+    m_recorded_something = false;
+
+    //get the audio input settings
+    m_audio_enabled =  true;
+    m_audio_channels = 2;
+    m_audio_sample_rate = 48000;
+
+
+    m_video_area_follow_fullscreen = true;
+
+    //bybobbi
+    m_video_frame_rate = 30;
+
+#if SSR_USE_PULSEAUDIO
+    m_pulseaudio_source = GetPulseAudioSourceName();
+#endif
+
+
+    //get the output settings
+    m_output_settings.file = QString();	//will be set later
+    m_output_settings.container_avname  = mp->GetContainerAVName();
+    m_output_settings.video_codec_avname = mp->GetVideoCodecAVName();
+//    m_output_settings.video_kbit_rate = mp->GetVideoKBitRate();
+    m_output_settings.video_kbit_rate = 5000;
+    m_output_settings.video_options.clear();
+    m_output_settings.video_width = 0;
+    m_output_settings.video_height = 0;
+    m_output_settings.video_frame_rate = m_video_frame_rate;
+//    m_output_settings.video_allow_frame_skipping = mp->GetVideoAllowFrameSkipping();
+    m_output_settings.video_allow_frame_skipping = true;
+
+    m_output_settings.audio_codec_avname = (m_audio_enabled)? mp->GetAudioCodecAVName() : QString();
+//    m_output_settings.audio_kbit_rate = mp->GetAudioKBitRate();
+    m_output_settings.audio_kbit_rate = 128;
+    m_output_settings.audio_options.clear();
+    m_output_settings.audio_channels = m_audio_channels;
+    m_output_settings.audio_sample_rate = m_audio_sample_rate;
+
+
+//    m_output_settings.video_options.push_back(std::make_pair(QString("crf"), QString::number(GetH264CRF())));
+//    m_output_settings.video_options.push_back(std::make_pair(QString("preset"), EnumToString(GetH264Preset())));
+    m_output_settings.video_options.push_back(std::make_pair(QString("crf"), "23"));
+    m_output_settings.video_options.push_back(std::make_pair(QString("preset"), "superfast"));
+
+//    switch(mp->GetAudioCodec()) {
+//        case ssr::enum_audio_codec::AUDIO_CODEC_OTHER: {
+//            m_output_settings.audio_options = GetOptionsFromString(mp->GetAudioOptions());
+//            break;
+//        }
+//        default: break; // to keep GCC happy
+//    }
+
+
+    Logger::LogInfo("[PageRecord::StartPage] " + tr("Starting page ..."));
+
+    Logger::LogInfo("[PageRecord::StartPage] " + tr("Started page."));
+
+
+    m_recorded_something = false;
+
+    UpdateInput();
+
+//    OnUpdateInformation();
+//    m_timer_update_info->start(1000);
+
+//    m_schedule_active = false;
+//    UpdateSchedule();
 
 }
 
@@ -259,9 +353,57 @@ void ssrtools::LoadInputSettings(QSettings *settings)
     LoadInputProfileSettings(settings);
 }
 
+void ssrtools::StartInput()
+{
+   if (m_input_started) return;
 
+   assert(m_x11_input == NULL);
+#if SSR_USE_PULSEAUDIO
+    assert(m_pulseaudio_input == NULL);
+#endif
 
+    try {
+        Logger::LogInfo("[PageRecord::StartInput] " + tr("Starting input ..."));
 
+        // start the video input
+        m_x11_input.reset(new X11Input(m_video_x, m_video_y, m_video_in_width, m_video_in_height, m_video_record_cursor,
+                                       m_video_area == ssr::enum_video_area::VIDEO_AREA_CURSOR, m_video_area_follow_fullscreen));
+
+        //start the audio input
+#if SSR_USE_PULSEAUDIO
+//            if(m_audio_backend == ssr::enum_audio_backend::AUDIO_BACKEND_PULSEAUDIO)
+                m_pulseaudio_input.reset(new PulseAudioInput(m_pulseaudio_source, m_audio_sample_rate));
+#endif
+
+        Logger::LogInfo("[PageRecord::StartInput] " + tr("Started input."));
+
+        m_input_started = true;
+    } catch (...) {
+        Logger::LogError("[PageRecord::StartInput] " + tr("Error: Something went wrong during initialization."));
+        m_x11_input.reset();
+#if SSR_USE_PULSEAUDIO
+        m_pulseaudio_input.reset();
+#endif
+        return;
+    }
+}
+
+void ssrtools::StopInput()
+{
+    if(!m_input_started)
+        return;
+
+    Logger::LogInfo("[PageRecord::StopInput] " + tr("Stopping input ..."));
+
+    m_x11_input.reset();
+#if SSR_USE_PULSEAUDIO
+    m_pulseaudio_input.reset();
+#endif
+
+    Logger::LogInfo("[PageRecord::StopInput] " + tr("Stopped input."));
+
+    m_input_started = false;
+}
 
 
 void ssrtools::on_m_toolButton_options_clicked()
@@ -282,6 +424,10 @@ void ssrtools::on_m_toolButton_options_clicked()
 void ssrtools::on_m_pushButton_start_clicked()
 {
     m_file_base = mp->GetFile();
+    m_video_x = GetVideoX();
+    m_video_y = GetVideoY();
+    m_video_in_width = GetVideoW();
+    m_video_in_height = GetVideoH();
 
 
     if (m_output_started) return;
@@ -325,8 +471,8 @@ void ssrtools::on_m_pushButton_start_clicked()
 
         m_output_started = true;
         m_recorded_something = true;
-        UpdateSysTray();
-        UpdateRecordButton();
+//        UpdateSysTray();
+//        UpdateRecordButton();
         UpdateInput();
 
     } catch(...) {
@@ -560,6 +706,12 @@ void ssrtools::LoadInputProfileSettings(QSettings *settings)
 
 }
 
+#if SSR_USE_PULSEAUDIO
+QString ssrtools::GetPulseAudioSourceName() {
+    return QString::fromStdString(m_pulseaudio_sources[GetPulseAudioSource()].m_name);
+}
+#endif
+
 
 
 
@@ -617,4 +769,81 @@ void ssrtools::SetVideoAreaFromRubberBand()
     }
     SetVideoW(r.width());
     SetVideoH(r.height());
+}
+
+#if SSR_USE_PULSEAUDIO
+void ssrtools::LoadPulseAudioSources() {
+    m_pulseaudio_sources = PulseAudioInput::GetSourceList();
+    if(m_pulseaudio_sources.empty()) {
+        m_pulseaudio_available = false;
+        m_pulseaudio_sources.push_back(PulseAudioInput::Source("", "(no sources found)"));
+    } else {
+        m_pulseaudio_available = true;
+    }
+    m_combobox_pulseaudio_source->clear();
+    for(unsigned int i = 0; i < m_pulseaudio_sources.size(); ++i) {
+        QString elided = m_combobox_pulseaudio_source->fontMetrics().elidedText(QString::fromStdString(m_pulseaudio_sources[i].m_description), Qt::ElideMiddle, 400);
+        m_combobox_pulseaudio_source->addItem("\u200e" + elided + "\u200e");
+    }
+}
+#endif
+
+void ssrtools::RecordPrepare()
+{
+
+}
+
+void ssrtools::UpdateInput()
+{
+    if (m_output_started) {	//m_previewing
+        StartInput();
+    } else {
+        StopInput();
+    }
+
+    //get source
+    VideoSource *video_source = NULL;
+    AudioSource *audio_source = NULL;
+#if SSR_USE_OPENGL_RECORDING
+    if(m_video_area == PageInput::VIDEO_AREA_GLINJECT) {
+        video_source = m_gl_inject_input.get();
+    } else {
+#else
+    {
+#endif
+        video_source = m_x11_input.get();
+    }
+    if(m_audio_enabled) {
+#if SSR_USE_ALSA
+        if(m_audio_backend == PageInput::AUDIO_BACKEND_ALSA)
+            audio_source = m_alsa_input.get();
+#endif
+#if SSR_USE_PULSEAUDIO
+//        if(m_audio_backend == ssr::enum_audio_backend::AUDIO_BACKEND_PULSEAUDIO)
+            audio_source = m_pulseaudio_input.get();
+#endif
+#if SSR_USE_JACK
+        if(m_audio_backend == PageInput::AUDIO_BACKEND_JACK)
+            audio_source = m_jack_input.get();
+#endif
+    }
+
+    // connect sinks
+    if(m_output_manager != NULL) {
+        if(m_output_started) {
+            m_output_manager->GetSynchronizer()->ConnectVideoSource(video_source, PRIORITY_RECORD);
+            m_output_manager->GetSynchronizer()->ConnectAudioSource(audio_source, PRIORITY_RECORD);
+        } else {
+            m_output_manager->GetSynchronizer()->ConnectVideoSource(NULL);
+            m_output_manager->GetSynchronizer()->ConnectAudioSource(NULL);
+        }
+    }
+//    if(m_previewing) {
+//        m_video_previewer->ConnectVideoSource(video_source, PRIORITY_PREVIEW);
+//        m_audio_previewer->ConnectAudioSource(audio_source, PRIORITY_PREVIEW);
+//    } else {
+//        m_video_previewer->ConnectVideoSource(NULL);
+//        m_audio_previewer->ConnectAudioSource(NULL);
+//    }
+
 }

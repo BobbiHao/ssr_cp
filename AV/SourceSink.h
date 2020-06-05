@@ -77,7 +77,7 @@ class AudioSource: private BaseSource
     friend class AudioSink;
 protected:
     AudioSource() {}
-    void PushAudioSample(unsigned int channels, unsigned int sample_rate, AVSampleFormat format, unsigned int sample_count, const uint8_t* data, int64_t timestamp);
+    void PushAudioSamples(unsigned int channels, unsigned int sample_rate, AVSampleFormat format, unsigned int sample_count, const uint8_t* data, int64_t timestamp);
     void PushAudioHole();
 };
 

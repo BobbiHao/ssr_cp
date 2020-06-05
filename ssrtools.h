@@ -9,6 +9,11 @@
 #include "Global.h"
 #include "WidgetWrapper.h"
 
+#if SSR_USE_PULSEAUDIO
+#include "PulseAudioInput.h"
+#endif
+
+
 namespace Ui {
 class ssrtools;
 }
@@ -16,9 +21,28 @@ class ssrtools;
 class mypopup;
 class X11Input;
 
+class input_widgets : public QWidget
+{
+
+};
+
+class output_widgets : public QWidget
+{
+
+};
+
+class record_widgets : public QWidget
+{
+
+};
+
+
 class ssrtools : public QWidget
 {
     Q_OBJECT
+
+private:
+    static constexpr int PRIORITY_RECORD = 0, PRIORITY_PREVIEW = -1;
 
 public:
     explicit ssrtools(QWidget *parent = nullptr);
@@ -28,12 +52,19 @@ public:
 
     void Init();
 
+    void Input_init();
     void Output_init();
-
+    void Record_init();
 
     void LoadSettings();
 
     void LoadInputSettings(QSettings* settings);
+
+
+    //record
+    void StartInput();
+    void StopInput();
+
 
 private slots:
     void on_m_toolButton_options_clicked();
@@ -48,11 +79,26 @@ private slots:
 private:
     void LoadInputProfileSettings(QSettings* settings);
 
+public:
+#if SSR_USE_PULSEAUDIO
+    QString GetPulseAudioSourceName();
+#endif
+
 private:
     void StartGrabbing();
     void StopGrabbing();
     void UpdateRubberBand();
     void SetVideoAreaFromRubberBand();
+
+
+#if SSR_USE_PULSEAUDIO
+    void LoadPulseAudioSources();
+#endif
+
+    //record
+    void RecordPrepare();
+    void UpdateInput();
+
 
 public slots:
     void OnUpdateVideoAreaFields();
@@ -78,7 +124,7 @@ private:
     bool m_video_record_cursor;
 
     bool m_audio_enabled;
-    unsigned int m_auido_channels, m_audio_sample_rate;
+    unsigned int m_audio_channels, m_audio_sample_rate;
 
 
     OutputSettings m_output_settings;
@@ -92,8 +138,20 @@ private:
     std::unique_ptr<RecordingFrameWindow>  m_rubber_band, m_recording_frame;
     QRect m_rubber_band_rect, m_select_window_outer_rect, m_select_window_inner_rect;
 
+#if SSR_USE_PULSEAUDIO
+    bool m_pulseaudio_available;
+    std::vector<PulseAudioInput::Source> m_pulseaudio_sources;
+#endif
 
+    ssr::enum_audio_backend m_audio_backend;
     std::unique_ptr<X11Input> m_x11_input;
+#if SSR_USE_PULSEAUDIO
+    QString m_pulseaudio_source;
+    std::unique_ptr<PulseAudioInput> m_pulseaudio_input;
+#endif
+
+//    VideoPreviewer *m_video_previewer;
+
 
 private:
     //output
@@ -113,9 +171,15 @@ private:
         QString name, avname;
         inline bool operator<(const AudioCodecData& other) const { return (avname < other.avname); }
     };
+    struct AudioKBitRate {
+        QString rate;
+        inline bool operator<(const AudioKBitRate& other) const { return (rate < other.rate); }
+    };
+
     std::vector<ContainerData> m_containers, m_containers_av;
     std::vector<VideoCodecData> m_video_codecs, m_video_codecs_av;
     std::vector<AudioCodecData> m_audio_codecs, m_audio_codecs_av;
+    std::vector<AudioKBitRate> m_audio_kbit_rates;
 
 private:
     //record
@@ -124,6 +188,9 @@ private:
 
     QString m_file_base;
     bool m_add_timestamp;
+
+    bool m_input_started;
+    bool m_recorded_something;
 
 
 public:
@@ -145,7 +212,27 @@ public:
     inline std::vector<ContainerData> GetContainers() { return m_containers; }
     inline std::vector<ContainerData> GetContainersAV() { return m_containers_av; }
     inline std::vector<VideoCodecData> GetVideoCodecs() { return m_video_codecs; }
+    inline std::vector<VideoCodecData> GetVideoCodecsAV() { return m_video_codecs_av; }
     inline std::vector<AudioCodecData> GetAudioCodecs() { return m_audio_codecs; }
+    inline std::vector<AudioCodecData> GetAudioCodecsAV() { return m_audio_codecs_av; }
+    inline std::vector<AudioKBitRate> GetAudioKBitRates() { return m_audio_kbit_rates; }
+
+
+#if SSR_USE_PULSEAUDIO
+    inline unsigned int GetPulseAudioSource() { return clamp(m_combobox_pulseaudio_source->currentIndex(), 0, (int) m_pulseaudio_sources.size() - 1); }
+#endif
+
+    //will change
+private:
+    QLineEdit *m_lineedit_audio_options_not_shown;
+#if SSR_USE_PULSEAUDIO
+//	QLabel *m_label_pulseaudio_source;
+    QComboBox *m_combobox_pulseaudio_source;
+//	QPushButton *m_pushbutton_pulseaudio_refresh;
+#endif
+public:
+    inline void SetAudioOptions(const QString& options) { m_lineedit_audio_options_not_shown->setText(options); }
+    inline QString GetAudioOptions() { return m_lineedit_audio_options_not_shown->text(); }
 
 };
 
