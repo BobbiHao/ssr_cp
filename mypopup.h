@@ -19,7 +19,6 @@ class mypopup : public QWidget
     Q_OBJECT
 
 public:
-    explicit mypopup(QWidget *parent = nullptr);
     explicit mypopup(ssrtools* ssr, QWidget *parent = nullptr);
     ~mypopup();
 
@@ -84,6 +83,8 @@ public:
 //    ssr::enum_audio_codec GetAudioCodecAV();
 
     int GetAudioKBitRate();
+
+//    void SetVideoKBitRate(unsigned int kbit_rate);
 
 
 };

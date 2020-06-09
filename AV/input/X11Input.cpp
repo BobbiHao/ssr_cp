@@ -190,6 +190,20 @@ void X11Input::GetCurrentSize(unsigned int *width, unsigned int *height)
     *height = lock->m_current_height;
 }
 
+double X11Input::GetFPS()
+{
+    int64_t timestamp = hrt_time_micro();
+    uint32_t frame_counter = m_frame_counter;
+    unsigned int time = timestamp - m_fps_last_timestamp;
+    if(time > 500000) {
+        unsigned int frames = frame_counter - m_fps_last_counter;
+        m_fps_last_timestamp = timestamp;
+        m_fps_last_counter = frame_counter;
+        m_fps_current = (double) frames / ((double) time * 1.0e-6);
+    }
+    return m_fps_current;
+}
+
 void X11Input::Init()
 {
     // do the X11 stuff

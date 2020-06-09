@@ -54,11 +54,12 @@ public:
 
     void Input_init();
     void Output_init();
-    void Record_init();
+    void Prepare_Record();
 
     void LoadSettings();
 
     void LoadInputSettings(QSettings* settings);
+    void LoadOutputSettings(QSettings* settings);
 
 
     //record
@@ -76,8 +77,12 @@ private slots:
 
     void on_m_pushbutton_video_select_window_clicked();
 
+    void OnUpdateInformation();
+
+
 private:
     void LoadInputProfileSettings(QSettings* settings);
+    void LoadOutputProfileSettings(QSettings* settings);
 
 public:
 #if SSR_USE_PULSEAUDIO
@@ -96,13 +101,12 @@ private:
 #endif
 
     //record
-    void RecordPrepare();
     void UpdateInput();
 
 
 public slots:
-    void OnUpdateVideoAreaFields();
     void OnUpdateRecordingFrame();
+    void OnUpdateVideoAreaFields();
 
 protected:
     virtual void mousePressEvent(QMouseEvent* event) override;
@@ -187,10 +191,14 @@ private:
     ssr::enum_video_area m_video_area;
 
     QString m_file_base;
+    QString m_file_protocol;
+
     bool m_add_timestamp;
 
     bool m_input_started;
     bool m_recorded_something;
+
+    QTimer *m_timer_schedule, *m_timer_update_info;
 
 
 public:

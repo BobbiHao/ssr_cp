@@ -23,4 +23,12 @@ Window X11FindRealWindow(Display* display, Window window);
 
 QString GetNewSegmentFile(const QString& file, bool add_timestamp);
 
+QString ReadableTime(int64_t time_micro);
+
+QString ReadableWidthHeight(unsigned int width, unsigned int height);
+
+QString ReadableSizeIEC(uint64_t size, const QString& suffix);
+
+QString ReadableSizeSI(uint64_t size, const QString& suffix);
+
 #endif // UTILS_H

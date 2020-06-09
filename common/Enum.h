@@ -8,6 +8,7 @@ enum class enum_video_area {
     VIDEO_AREA_FIXED,
     VIDEO_AREA_CURSOR,
     VIDEO_AREA_COUNT
+
 };
 
 //output
@@ -18,6 +19,7 @@ enum class enum_container {
     CONTAINER_OGG,
     CONTAINER_OTHER,
     CONTAINER_COUNT // must be last
+
 };
 enum class enum_video_codec {
     VIDEO_CODEC_H264,

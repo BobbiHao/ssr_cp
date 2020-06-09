@@ -6,130 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>515</width>
-    <height>341</height>
+    <width>731</width>
+    <height>459</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QToolButton" name="m_toolButton_options">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>160</y>
-     <width>51</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>option</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="m_pushButton_start">
-   <property name="geometry">
-    <rect>
-     <x>380</x>
-     <y>160</y>
-     <width>80</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>start</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="m_radioButton_fullscreen">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>160</y>
-     <width>96</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>fullscreen</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="m_radioButton_fixed">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>160</y>
-     <width>96</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>fixed</string>
-   </property>
-  </widget>
-  <widget class="QRadioButton" name="m_radioButton_cursor">
-   <property name="geometry">
-    <rect>
-     <x>210</x>
-     <y>160</y>
-     <width>96</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>cursor</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="m_label_video_x">
-   <property name="geometry">
-    <rect>
-     <x>40</x>
-     <y>40</y>
-     <width>55</width>
-     <height>18</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Left</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="m_label_video_y">
-   <property name="geometry">
-    <rect>
-     <x>140</x>
-     <y>30</y>
-     <width>55</width>
-     <height>18</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Top</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="m_label_video_width">
-   <property name="geometry">
-    <rect>
-     <x>30</x>
-     <y>80</y>
-     <width>55</width>
-     <height>18</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Width</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="m_label_video_h">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>80</y>
-     <width>55</width>
-     <height>18</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Height</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
@@ -143,74 +26,306 @@
     <string>VideoFrate</string>
    </property>
   </widget>
-  <widget class="QSpinBox" name="m_spinbox_video_x">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>30</y>
-     <width>42</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="maximum">
-    <number>2000</number>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="m_spinbox_video_y">
-   <property name="geometry">
-    <rect>
-     <x>200</x>
-     <y>30</y>
-     <width>42</width>
-     <height>27</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="m_spinbox_video_w">
-   <property name="geometry">
-    <rect>
-     <x>80</x>
-     <y>80</y>
-     <width>42</width>
-     <height>27</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QSpinBox" name="m_spinbox_video_h">
-   <property name="geometry">
-    <rect>
-     <x>200</x>
-     <y>80</y>
-     <width>42</width>
-     <height>27</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="m_pushbutton_video_select_rectangle">
-   <property name="geometry">
-    <rect>
-     <x>129</x>
-     <y>210</y>
-     <width>91</width>
-     <height>26</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>select rectangle</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="m_pushbutton_video_select_window">
+  <widget class="QWidget" name="widget" native="true">
    <property name="geometry">
     <rect>
      <x>230</x>
-     <y>210</y>
-     <width>91</width>
-     <height>26</height>
+     <y>280</y>
+     <width>71</width>
+     <height>80</height>
     </rect>
    </property>
-   <property name="text">
-    <string>select window</string>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>55</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>80</y>
+     <width>185</width>
+     <height>68</height>
+    </rect>
    </property>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QLabel" name="m_label_video_width">
+      <property name="text">
+       <string>Width</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3" rowspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QSpinBox" name="m_spinbox_video_y"/>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="m_spinbox_video_h"/>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1" rowspan="2">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QSpinBox" name="m_spinbox_video_x">
+        <property name="maximum">
+         <number>2000</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSpinBox" name="m_spinbox_video_w"/>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="m_label_video_x">
+      <property name="text">
+       <string>Left</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2">
+     <widget class="QLabel" name="m_label_video_y">
+      <property name="text">
+       <string>Top</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QLabel" name="m_label_video_h">
+      <property name="text">
+       <string>Height</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>200</y>
+     <width>192</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <item>
+     <widget class="QPushButton" name="m_pushbutton_video_select_rectangle">
+      <property name="text">
+       <string>select rectangle</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="m_pushbutton_video_select_window">
+      <property name="text">
+       <string>select window</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="layoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>240</y>
+     <width>560</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QRadioButton" name="m_radioButton_fullscreen">
+      <property name="text">
+       <string>fullscreen</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="m_radioButton_fixed">
+      <property name="text">
+       <string>fixed</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="m_radioButton_cursor">
+      <property name="text">
+       <string>cursor</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QCheckBox" name="m_checkbox_record_cursor">
+      <property name="text">
+       <string>record cursor</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QCheckBox" name="m_checkbox_audio_enable">
+      <property name="text">
+       <string>enable audio</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QToolButton" name="m_toolButton_options">
+      <property name="text">
+       <string>option</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="m_pushButton_start">
+      <property name="text">
+       <string>start</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QGroupBox" name="groupbox_information">
+   <property name="geometry">
+    <rect>
+     <x>400</x>
+     <y>0</y>
+     <width>161</width>
+     <height>231</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Information</string>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_total_time">
+      <property name="text">
+       <string>Total time:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="m_label_info_total_time">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_frame_rate_in">
+      <property name="text">
+       <string>FPS in:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="m_label_info_frame_rate_in">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLabel" name="label_frame_rate_out">
+      <property name="text">
+       <string>FPS out:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QLabel" name="m_label_info_frame_rate_out">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label_size_in">
+      <property name="text">
+       <string>Size in:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="m_label_info_size_in">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QLabel" name="label_size_out">
+      <property name="text">
+       <string>Size out:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLabel" name="m_label_info_size_out">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QLabel" name="label_file_name">
+      <property name="text">
+       <string>File name:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1">
+     <widget class="QLabel" name="m_label_info_file_name">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QLabel" name="label_file_size">
+      <property name="text">
+       <string>File size:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QLabel" name="m_label_info_file_size">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QLabel" name="label_bit_rate">
+      <property name="text">
+       <string>Bit rate:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1">
+     <widget class="QLabel" name="m_label_info_bit_rate">
+      <property name="text">
+       <string>TextLabel</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>

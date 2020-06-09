@@ -38,6 +38,7 @@ SOURCES += \
     AV/output/Muxer.cpp \
     AV/output/OutputManager.cpp \
     AV/output/Synchronizer.cpp \
+    AV/output/SyncDiagram.cpp \
     AV/output/VideoEncoder.cpp \
     AV/output/X264Presets.cpp \
 #    GUI/Input_Widgets.cpp \
@@ -69,6 +70,7 @@ HEADERS += \
     AV/output/Muxer.h \
     AV/output/OutputManager.h \
     AV/output/Synchronizer.h \
+    AV/output/SyncDiagram.h \
     AV/output/VideoEncoder.h \
     AV/output/X264Presets.h \
 #    GUI/Input_Widgets.h \

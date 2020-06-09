@@ -125,3 +125,36 @@ QString GetNewSegmentFile(const QString& file, bool add_timestamp) {
     return newfile;
 }
 
+QString ReadableTime(int64_t time_micro) {
+    unsigned int time = (time_micro + 500000) / 1000000;
+    return QString("%1:%2:%3")
+            .arg(time / 3600)
+            .arg((time / 60) % 60, 2, 10, QLatin1Char('0'))
+            .arg(time % 60, 2, 10, QLatin1Char('0'));
+}
+
+QString ReadableWidthHeight(unsigned int width, unsigned int height) {
+    if(width == 0 && height == 0)
+        return "?";
+    return QString::number(width) + "x" + QString::number(height);
+}
+
+QString ReadableSizeIEC(uint64_t size, const QString& suffix) {
+   if(size < (uint64_t) 10 * 1024)
+       return QString::number(size) + " " + suffix;
+   if(size < (uint64_t) 10 * 1024 * 1024)
+       return QString::number((size + 512) / 1024) + " Ki" + suffix;
+   if(size < (uint64_t) 10 * 1024 * 1024 * 1024)
+       return QString::number((size / 1024 + 512) / 1024) + " Mi" + suffix;
+   return QString::number((size / (1024 * 1024) + 512) / 1024) + " Gi" + suffix;
+}
+
+QString ReadableSizeSI(uint64_t size, const QString& suffix) {
+    if(size < (uint64_t) 10 * 1000)
+        return QString::number(size) + " " + suffix;
+    if(size < (uint64_t) 10 * 1000 * 1000)
+        return QString::number((size + 500) / 1000) + " k" + suffix;
+    if(size < (uint64_t) 10 * 1000 * 1000 * 1000)
+        return QString::number((size / 1000 + 500) / 1000) + " M" + suffix;
+    return QString::number((size / (1000 * 1000) + 512) / 1024) + " G" + suffix;
+}

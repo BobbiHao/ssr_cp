@@ -12,23 +12,6 @@
 #include "EnumStrings.h"
 #include "CommandLineOptions.h"
 
-//static ssrtools* ssr;
-
-mypopup::mypopup(QWidget *parent) :
-    QWidget(parent),
-    ui(new Ui::mypopup)
-{
-    ui->setupUi(this);
-    this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinMaxButtonsHint|Qt::WindowStaysOnTopHint);
-
-    ssr = static_cast<ssrtools*>(parent);
-
-    InputInit();
-
-//    OutputInit();
-
-}
-
 mypopup::mypopup(ssrtools *ssr, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::mypopup)
@@ -409,6 +392,7 @@ unsigned int mypopup::GetContainerAV()
 {
     return clamp(m_combobox_container_av_not_shown->currentIndex(), 0, int(ssr->GetContainersAV().size()) - 1);
 }
+#endif
 
 void mypopup::SetContainer(ssr::enum_container container)
 {
@@ -452,5 +436,10 @@ int mypopup::GetAudioKBitRate()
     int len = sizeof(ssr_audio_kbit_rates)/sizeof(ssr_audio_kbit_rates[0]) - 1;
     return clamp(ui->m_comboBox_audiorate->currentIndex(), 0,  len);
 }
-#endif
+
+//void mypopup::SetVideoKBitRate(unsigned int kbit_rate)
+//{
+//    ui->m_lineedit_video_kbit_rate->setCurrentIndex(clamp((unsigned int) audio_codec, 0u, (unsigned int) ssr::enum_audio_codec::AUDIO_CODEC_COUNT - 1));
+//     m_lineedit_video_kbit_rate->setText(QString::number(kbit_rate));
+//}
 

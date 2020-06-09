@@ -55,6 +55,10 @@ public:
     // This function is thread-safe.
     void GetCurrentSize(unsigned int* width, unsigned int* height);
 
+    // Returns the total number of captured frames.
+    // This function is thread-safe.
+    double GetFPS();
+
 private:
     void Init();
     void Free();

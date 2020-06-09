@@ -1,11 +1,8 @@
 #include "SyncDiagram.h"
-
-#include "MainWindow.h"
-
 #include <cmath>
 
-constexpr int SyncDiagram::CHANNEL_HEIGHT, SyncDiagram::CHANNEL_SPACING, SyncDiagram::MARGIN_RIGHT;
-constexpr double SyncDiagram::PIXELS_PER_SECOND;
+//constexpr int SyncDiagram::CHANNEL_HEIGHT, SyncDiagram::CHANNEL_SPACING, SyncDiagram::MARGIN_RIGHT;
+//constexpr double SyncDiagram::PIXELS_PER_SECOND;
 
 inline double floormod(double x, double y) {
     return x - floor(x / y) * y;
@@ -30,7 +27,7 @@ SyncDiagram::SyncDiagram(size_t channels) {
     m_font = QFont("Sans");
     m_font.setPixelSize(12);
 
-    setWindowTitle(tr("Synchronization Diagram") + " - " + MainWindow::WINDOW_CAPTION);
+//    setWindowTitle(tr("Synchronization Diagram") + " - " + MainWindow::WINDOW_CAPTION);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     m_update_timer = new QTimer(this);

@@ -1,7 +1,7 @@
 #include "Synchronizer.h"
 
 #include "Logger.h"
-//#include "CommandLineOptions.h"
+#include "CommandLineOptions.h"
 #include "OutputManager.h"
 #include "OutputSettings.h"
 #include "VideoEncoder.h"
@@ -233,14 +233,14 @@ void Synchronizer::Init() {
     }
 
     // create sync diagram
-//    if(CommandLineOptions::GetSyncDiagram()) {
-//        m_sync_diagram.reset(new SyncDiagram(4));
-//        m_sync_diagram->SetChannelName(0, SyncDiagram::tr("Video in"));
-//        m_sync_diagram->SetChannelName(1, SyncDiagram::tr("Audio in"));
-//        m_sync_diagram->SetChannelName(2, SyncDiagram::tr("Video out"));
-//        m_sync_diagram->SetChannelName(3, SyncDiagram::tr("Audio out"));
-//        m_sync_diagram->show();
-//    }
+    if(CommandLineOptions::GetSyncDiagram()) {
+        m_sync_diagram.reset(new SyncDiagram(4));
+        m_sync_diagram->SetChannelName(0, SyncDiagram::tr("Video in"));
+        m_sync_diagram->SetChannelName(1, SyncDiagram::tr("Audio in"));
+        m_sync_diagram->SetChannelName(2, SyncDiagram::tr("Video out"));
+        m_sync_diagram->SetChannelName(3, SyncDiagram::tr("Audio out"));
+        m_sync_diagram->show();
+    }
 
     // initialize shared data
     {
@@ -889,13 +889,13 @@ void Synchronizer::SynchronizerThread() {
                 if(m_sync_diagram != NULL) {
                     double time_in = (double) hrt_time_micro() * 1.0e-6;
                     double time_out = (double) GetTotalTime(lock.get()) * 1.0e-6;
-#if DEFINE_DIAGRAM		//bybobbi
+//#if DEFINE_DIAGRAM		//bybobbi
                     m_sync_diagram->SetCurrentTime(0, time_in);
                     m_sync_diagram->SetCurrentTime(1, time_in);
                     m_sync_diagram->SetCurrentTime(2, time_out);
                     m_sync_diagram->SetCurrentTime(3, time_out);
                     m_sync_diagram->Update();
-#endif
+//#endif
                 }
             }
 

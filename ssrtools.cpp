@@ -66,7 +66,7 @@ ssrtools::ssrtools(QWidget *parent) :
     Init();
     mp = new mypopup(this, parent);
 
-    Record_init();
+    Prepare_Record();
 }
 
 ssrtools::~ssrtools()
@@ -93,18 +93,10 @@ void ssrtools::Init()
     m_grabbing = false;
     m_selecting_window = false;
 
-    //record init
-    m_output_started =false;
 
     Input_init();
 
-    //mp input
-//    connect(mp->getUI()->m_comboBox_videores,
-//    mp->InputInit(this);
-
     Output_init();
-    //mp output
-//    mp->OutputInit();
 
     LoadSettings();
 
@@ -129,7 +121,7 @@ void ssrtools::Input_init()
     ui->m_spinbox_video_h->setRange(0, SSR_MAX_IMAGE_SIZE);
     ui->m_spinbox_video_h->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-    connect(m_buttongroup_video_area, SIGNAL(buttonClicked(int)), SLOT(OnUpdateVideoAreaFields()));
+    connect(m_buttongroup_video_area, SIGNAL(buttonClicked(int)), this, SLOT(OnUpdateVideoAreaFields()));
     connect(ui->m_spinbox_video_x, SIGNAL(focusIn()), this, SLOT(OnUpdateRecordingFrame()));
     connect(ui->m_spinbox_video_x, SIGNAL(focusOut()), this, SLOT(OnUpdateRecordingFrame()));
     connect(ui->m_spinbox_video_x, SIGNAL(valueChanged(int)), this, SLOT(OnUpdateRecordingFrame()));
@@ -267,8 +259,14 @@ void ssrtools::Output_init()
 
 }
 
-void ssrtools::Record_init()
+void ssrtools::Prepare_Record()
 {
+    //gui init
+    m_timer_update_info = new QTimer(this);
+    connect(m_timer_update_info, SIGNAL(timeout()), this, SLOT(OnUpdateInformation()));
+
+    //record init
+    m_output_started =false;
     m_input_started = false;
     m_recorded_something = false;
 
@@ -332,8 +330,8 @@ void ssrtools::Record_init()
 
     UpdateInput();
 
-//    OnUpdateInformation();
-//    m_timer_update_info->start(1000);
+    OnUpdateInformation();
+    m_timer_update_info->start(1000);
 
 //    m_schedule_active = false;
 //    UpdateSchedule();
@@ -345,12 +343,18 @@ void ssrtools::LoadSettings()
     QSettings settings(CommandLineOptions::GetSettingsFile(), QSettings::IniFormat);
 
     LoadInputSettings(&settings);
+    LoadOutputSettings(&settings);
 
 }
 
 void ssrtools::LoadInputSettings(QSettings *settings)
 {
     LoadInputProfileSettings(settings);
+}
+
+void ssrtools::LoadOutputSettings(QSettings *settings)
+{
+    LoadOutputProfileSettings(settings);
 }
 
 void ssrtools::StartInput()
@@ -410,7 +414,7 @@ void ssrtools::on_m_toolButton_options_clicked()
 {
    QRect og = ui->m_toolButton_options->geometry();
    QPoint pos = this->pos();
-   mp->move(og.x() + pos.x(), og.y() + pos.y() + 100);
+   mp->move(og.x() + pos.x(), og.y() + pos.y() + 250);
    if (!options_show) {
        options_show = true;
        mp->show();
@@ -480,10 +484,6 @@ void ssrtools::on_m_pushButton_start_clicked()
     }
 }
 
-void ssrtools::OnUpdateVideoAreaFields()
-{
-
-}
 
 
 void ssrtools::OnUpdateRecordingFrame()
@@ -501,6 +501,11 @@ void ssrtools::OnUpdateRecordingFrame()
     } else {
         m_recording_frame.reset();
     }
+}
+
+void ssrtools::OnUpdateVideoAreaFields()
+{
+    mp->OnUpdateVideoAreaFields();
 }
 
 void ssrtools::mousePressEvent(QMouseEvent *event)
@@ -683,6 +688,80 @@ void ssrtools::on_m_pushbutton_video_select_window_clicked()
     StartGrabbing();
 }
 
+void ssrtools::OnUpdateInformation()
+{
+    int64_t total_time = 0;
+    double fps_in = 0.0;
+    double fps_out = 0.0;
+    uint64_t bit_rate = 0, total_bytes = 0;
+
+#if SSR_USE_OPENGL_RECORDING
+    if(m_gl_inject_input != NULL)
+        fps_in = m_gl_inject_input->GetFPS();
+#endif
+    if(m_x11_input != NULL)
+        fps_in = m_x11_input->GetFPS();
+
+    if(m_output_manager != NULL) {
+        total_time = (m_output_manager->GetSynchronizer() == NULL)? 0 : m_output_manager->GetSynchronizer()->GetTotalTime();
+        fps_out = m_output_manager->GetActualFrameRate();
+        bit_rate = (uint64_t) (m_output_manager->GetActualBitRate() + 0.5);
+        total_bytes = m_output_manager->GetTotalBytes();
+    }
+
+    QString file_name;
+    if(m_file_protocol.isNull())
+        file_name = (m_output_settings.file.isNull())? "?" : QFileInfo(m_output_settings.file).fileName();
+    else
+        file_name = "(" + m_file_protocol + ")";
+
+    // for X11 recording, update the video size
+    if(m_x11_input != NULL)
+        m_x11_input->GetCurrentSize(&m_video_in_width, &m_video_in_height);
+
+#if SSR_USE_OPENGL_RECORDING
+    // for OpenGL recording, update the video size
+    if(m_gl_inject_input != NULL)
+        m_gl_inject_input->GetCurrentSize(&m_video_in_width, &m_video_in_height);
+#endif
+
+    ui->m_label_info_total_time->setText(ReadableTime(total_time));
+    ui->m_label_info_frame_rate_in->setText(QString::number(fps_in, 'f', 2));
+    ui->m_label_info_frame_rate_out->setText(QString::number(fps_out, 'f', 2));
+    ui->m_label_info_size_in->setText(ReadableWidthHeight(m_video_in_width, m_video_in_height));
+    ui->m_label_info_size_out->setText(ReadableWidthHeight(m_output_settings.video_width, m_output_settings.video_height));
+    ui->m_label_info_file_name->setText(file_name);
+    ui->m_label_info_file_size->setText(ReadableSizeIEC(total_bytes, "B"));
+    ui->m_label_info_bit_rate->setText(ReadableSizeSI(bit_rate, "bit/s"));
+
+    if(!CommandLineOptions::GetStatsFile().isNull()) {
+        QString str = QString() +
+                "capturing\t" + ((m_input_started)? "1" : "0") + "\n"
+                "recording\t" + ((m_output_started)? "1" : "0") + "\n"
+                "total_time\t" + QString::number(total_time) + "\n"
+                "frame_rate_in\t" + QString::number(fps_in, 'f', 8) + "\n"
+                "frame_rate_out\t" + QString::number(fps_out, 'f', 8) + "\n"
+                "size_in_width\t" + QString::number(m_video_in_width) + "\n"
+                "size_in_height\t" + QString::number(m_video_in_height) + "\n"
+                "size_out_width\t" + QString::number(m_output_settings.video_width) + "\n"
+                "size_out_height\t" + QString::number(m_output_settings.video_height) + "\n"
+                "file_name\t" + file_name + "\n"
+                "file_size\t" + QString::number(total_bytes) + "\n"
+                "bit_rate\t" + QString::number(bit_rate) + "\n";
+        QByteArray data = str.toUtf8();
+        QByteArray old_file = QFile::encodeName(CommandLineOptions::GetStatsFile());
+        QByteArray new_file = QFile::encodeName(CommandLineOptions::GetStatsFile() + "-new");
+        // Qt doesn't get the permissions right (you can only change the permissions after creating the file, that's too late),
+        // and it doesn't allow renaming a file over another file, so don't bother with QFile and just use POSIX and C functions.
+        int fd = open(new_file.constData(), O_WRONLY | O_CREAT | O_CLOEXEC, 0600);
+        if(fd != -1) {
+            ssize_t b = write(fd, data.constData(), data.size()); Q_UNUSED(b);
+            ::close(fd);
+            rename(new_file.constData(), old_file.constData());
+        }
+    }
+}
+
 void ssrtools::LoadInputProfileSettings(QSettings *settings)
 {
     //load settings
@@ -702,7 +781,45 @@ void ssrtools::LoadInputProfileSettings(QSettings *settings)
 
     //update things
     OnUpdateRecordingFrame();
-    OnUpdateVideoAreaFields();
+
+}
+
+void ssrtools::LoadOutputProfileSettings(QSettings *settings)
+{
+    // choose default container and codecs
+    ssr::enum_container default_container = (ssr::enum_container) 0;
+    for(unsigned int i = 0; i < int(ssr::enum_container::CONTAINER_OTHER); ++i) {
+        if(AVFormatIsInstalled(m_containers[i].avname)) {
+            default_container = (ssr::enum_container) i;
+            break;
+        }
+    }
+    ssr::enum_video_codec default_video_codec = (ssr::enum_video_codec) 0;
+    for(unsigned int i = 0; i < int(ssr::enum_video_codec::VIDEO_CODEC_OTHER); ++i) {
+        if(AVCodecIsInstalled(m_video_codecs[i].avname) && m_containers[int(default_container)].supported_video_codecs.count((ssr::enum_video_codec) i)) {
+            default_video_codec = (ssr::enum_video_codec) i;
+            break;
+        }
+    }
+    ssr::enum_audio_codec default_audio_codec = (ssr::enum_audio_codec) 0;
+    for(unsigned int i = 0; i < int(ssr::enum_video_codec::VIDEO_CODEC_OTHER); ++i) {
+        if(AVCodecIsInstalled(m_audio_codecs[i].avname) && m_containers[int(default_container)].supported_audio_codecs.count((ssr::enum_audio_codec) i)) {
+            default_audio_codec = (ssr::enum_audio_codec) i;
+            break;
+        }
+    }
+
+    // choose default file name
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    QString dir_videos = QDesktopServices::storageLocation(QDesktopServices::MoviesLocation);
+    QString dir_documents = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString dir_videos = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+    QString dir_documents = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString dir_home = QDir::homePath();
+    QString best_dir = (QDir(dir_videos).exists())? dir_videos : (QDir(dir_documents).exists())? dir_documents : dir_home;
+    QString default_file = best_dir + "/simplescreenrecorder." + m_containers[int(default_container)].suffixes[0];
 
 }
 
@@ -787,11 +904,6 @@ void ssrtools::LoadPulseAudioSources() {
     }
 }
 #endif
-
-void ssrtools::RecordPrepare()
-{
-
-}
 
 void ssrtools::UpdateInput()
 {

@@ -20,7 +20,7 @@ private:
     bool m_start_hidden;
     bool m_start_recording;
     bool m_activate_schedule;
-//    bool m_sync_diagram;
+    bool m_sync_diagram;
 //    bool m_benchmark;
 //    bool m_gui;
 
@@ -40,7 +40,7 @@ public:
     inline static bool GetStartHidden() { return GetInstance()->m_start_hidden; }
     inline static bool GetStartRecording() { return GetInstance()->m_start_recording; }
     inline static bool GetActivateSchedule() { return GetInstance()->m_activate_schedule; }
-//    inline static bool GetSyncDiagram() { return GetInstance()->m_sync_diagram; }
+    inline static bool GetSyncDiagram() { return GetInstance()->m_sync_diagram; }
 //    inline static bool GetBenchmark() { return GetInstance()->m_benchmark; }
 //    inline static bool GetGui() { return GetInstance()->m_gui; }
 };

@@ -1,7 +1,7 @@
 #ifndef SYNCDIAGRAM_H
 #define SYNCDIAGRAM_H
 
-
+#include "Global.h"
 #include "MutexDataPair.h"
 #include <QWidget>
 #include <deque>
